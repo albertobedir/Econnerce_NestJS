@@ -29,12 +29,12 @@ export class AuthService {
         },
       });
       return {
-        message: 'User registered successfully',
+        message: 'User created successfully',
         userId: user.id,
       };
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new HttpException('Email already exists', HttpStatus.BAD_REQUEST);
+        throw new ForbiddenException('Email already exists');
       }
       throw new HttpException(
         'Something went wrong during registration',
@@ -60,7 +60,10 @@ export class AuthService {
     });
     await this.hashedRt(tokens.refresh_token, exist.id);
 
-    return tokens;
+    return {
+      message: 'User logged successfully',
+      tokens,
+    };
   };
 
   getTokens = async ({ email, role, sub }: JwtPayload): Promise<Tokens> => {
