@@ -58,7 +58,7 @@ export class AuthService {
       role: exist.userRole,
       sub: exist.id,
     });
-    await this.hashedRt(tokens.refresh_token, exist.id);
+    await this.hashedRt(exist.id, tokens.refresh_token);
 
     return {
       message: 'User logged successfully',
@@ -90,11 +90,29 @@ export class AuthService {
     };
   };
 
-  hashedRt = async (rt: string, userId: string) => {
+  hashedRt = async (userId: string, rt: string) => {
     const hashedRt = await argon.hash(rt);
     await this.prisma.user.update({
       where: { id: userId },
       data: { hashedRt },
     });
+  };
+
+  refreshSession = async (id: string, rt: string): Promise<Tokens> => {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user || !user.hashedRt) throw new ForbiddenException('Access Denied');
+
+    const rtMatch = await argon.verify(user.hashedRt, rt);
+    if (!rtMatch) throw new ForbiddenException('Access Denied');
+
+    const tokens = await this.getTokens({
+      email: user.email,
+      role: user.userRole,
+      sub: id,
+    });
+
+    await this.hashedRt(id, tokens.refresh_token);
+
+    return tokens;
   };
 }
