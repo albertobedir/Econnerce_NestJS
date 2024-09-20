@@ -12,6 +12,7 @@ import { AuthDto } from './dto';
 import { Public } from 'src/common/decorators';
 import { GetUser, GetUserId } from 'src/common/decorators/user.decorator';
 import { RtGuard } from 'src/common/guards';
+import { Tokens } from 'src/common/types/auth';
 
 @Controller('auth')
 export class AuthController {
@@ -30,10 +31,15 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Get('logout')
+  logout(@GetUserId() sub: string): Promise<boolean> {
+    return this.authService.logout(sub);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Get('get-session')
   getSession(@GetUser('sub') sub: string) {
-    return sub;
+    return this.authService.getSession(sub);
   }
 
   @Public()
@@ -43,7 +49,7 @@ export class AuthController {
   refreshSession(
     @GetUser('refreshToken') rt: string,
     @GetUserId() sub: string,
-  ) {
+  ): Promise<Tokens> {
     return this.authService.refreshSession(sub, rt);
   }
 }
